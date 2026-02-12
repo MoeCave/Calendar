@@ -19,4 +19,12 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   calendar.render();
+
+  fetch('http://127.0.0.1:5000/api/dades')
+    .then(response => response.json())
+    .then(dades => {
+        console.log(dades);
+        // Utilitza les dades aquí
+    })
+    .catch(error => console.error('Error:', error));
 });

@@ -1,23 +1,40 @@
-from flask import Flask, request, render_template, redirect, url_for
+from flask import Flask, request, render_template, redirect, url_for, jsonify
 from connectBD import *
+from bson import ObjectId
+from datetime import datetime
+
+def serialize_doc(doc):
+    doc["_id"] = str(doc["_id"])  # ObjectId → stringa
+    return doc
 
 app = Flask(__name__)
 
 db = connectBD()
 
 def get_events():
-    return list(db.event.find({}, {"_id": 0}))
+    return list(db.event.find())
 
 def get_tasks():
-    return list(db.task.find({}, {"_id": 0}))
+    return list(db.task.find())
 
 @app.route('/')
 def home():
+    events = [serialize_doc(e) for e in get_events()]
+    tasks = [serialize_doc(t) for t in get_tasks()]
+
     return render_template(
         "index.html",
-        events=get_events(),
-        tasks=get_tasks()
+        events=events,
+        tasks=tasks
     )
+
+@app.route('/api/dades')
+def get_dades():
+    dades = list(db.colleccio.find())
+    # Convertir ObjectId a string
+    for item in dades:
+        item['_id'] = str(item['_id'])
+    return jsonify(dades)
 
 @app.route('/record', methods=['POST'])
 def add_record():
