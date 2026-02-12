@@ -1,37 +1,65 @@
 from flask import Flask, request, render_template, redirect, url_for
-from pymongo import MongoClient
+from connectBD import *
 
 app = Flask(__name__)
-MONGO_URI = "mongodb+srv://admin:1234@abrildb.wrvdbre.mongodb.net/?retryWrites=true&w=majority&appName=abrildb"
-client = MongoClient(MONGO_URI)
 
-db = client["DBNAME"]
-def obtenir_tasques():
-    return list(db.tasques.find({}, {"_id": 0}))
+db = connectBD()
+
+def get_events():
+    return list(db.event.find({}, {"_id": 0}))
+
+def get_tasks():
+    return list(db.event.find({}, {"_id": 0}))
 
 @app.route('/')
-def home():
-    return render_template("index.html", tasques=obtenir_tasques())
+def show_events():
+    return render_template("index.html", event=get_events())
 
-@app.route('/tasques', methods=['POST'])
-def afegir_tasca():
-    tasca = {
-    "titol": request.form['titol'],
-    "descripcio": request.form.get('descripcio', ''),
-    "completada": False
-    }
-    db.tasques.insert_one(tasca)
+@app.route('/')
+def show_tasks():
+    return render_template("index.html", event=get_tasks())
+
+@app.route('/record', methods=['POST'])
+def add_record():
+    if (request.form['type']) == "task":
+        task = {
+        "titol": request.form['titol'],
+        "descripcio": request.form.get('descripcio', ''),
+        "limitDate": request.form.get('descripcio', ''),
+        "color": request.form.get('descripcio', 'purple'),
+        "completada": False
+        }
+        db.task.insert_one()
+        return "Task saved successfully"
+    elif (request.form['type']) == "event":
+        event = {
+        "title": request.form['titol'],
+        "description": request.form.get('descripcio', ''),
+        "starTime": request.form['titol'],
+        "endTime": request.form['titol'],
+        "color": request.form.get('descripcio', 'blue')
+        }
+        db.event.insert_one()
+        return "Event saved successfully"
+
     return redirect(url_for('home'))
 
-@app.route('/tasques/<titol>/completar', methods=['POST'])
-def completar_tasca(titol):
-    db.tasques.update_one({"titol": titol}, {"$set": {"completada": True}})
+@app.route('/task/<titol>/completar', methods=['POST'])
+def complete_task(titol):
+    db.task.update_one({"titol": titol}, {"$set": {"completada": True}})
     return redirect(url_for('home'))
 
-@app.route('/tasques/<titol>/eliminar', methods=['POST'])
-def eliminar_tasca(titol):
-    db.tasques.delete_one({"titol": titol})
+@app.route('/task/<titol>/eliminar', methods=['POST'])
+def delete_task(titol):
+    db.task.delete_one({"titol": titol})
     return redirect(url_for('home'))
+
+@app.route('/event/<titol>/eliminar', methods=['POST'])
+def delete_event(titol):
+    db.event.delete_one({"titol": titol})
+    return redirect(url_for('home'))
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
