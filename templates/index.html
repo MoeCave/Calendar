@@ -9,7 +9,7 @@
         <title>Calendario</title>
     </head>
 
-    <body class="bg-gray-100">
+    <body>
         <main>
             <section class="calendar">
                 <div id="calendar"></div>
@@ -22,6 +22,10 @@
 
         <!-- FullCalendar bundle global -->
         <script src="{{ url_for('static', filename='scripts/fullcalendar.global.min.js') }}"></script>
+        
+        <script type="text/plain" id="events-data">
+        window.calendarEvents = {{ events | tojson | safe }};
+        </script>
         <!-- Tu lógica -->
         <script src="{{ url_for('static', filename='scripts/calendar.js') }}"></script>
     </body>

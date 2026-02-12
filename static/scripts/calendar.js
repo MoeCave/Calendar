@@ -8,12 +8,14 @@ document.addEventListener('DOMContentLoaded', function () {
       center: 'title',
       right: 'dayGridMonth,timeGridWeek,timeGridDay'
     },
-    events: [
-      {
-        title: 'Evento de prueba',
-        start: new Date().toISOString().split('T')[0]
+    events: window.calendarEvents || [],  // ← CAMBIO AQUÍ: de Flask via Jinja
+    dateClick: function(info) {  // ← Opcional: para crear al clicar
+      const title = prompt('Título del evento:');
+      if (title) {
+        // Redirige a tu form POST (como /events o /tasques)
+        window.location.href = `/events?titol=${encodeURIComponent(title)}&data=${info.dateStr}`;
       }
-    ]
+    }
   });
 
   calendar.render();
