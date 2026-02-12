@@ -9,15 +9,15 @@ def get_events():
     return list(db.event.find({}, {"_id": 0}))
 
 def get_tasks():
-    return list(db.event.find({}, {"_id": 0}))
+    return list(db.task.find({}, {"_id": 0}))
 
 @app.route('/')
-def show_events():
-    return render_template("index.html", event=get_events())
-
-@app.route('/')
-def show_tasks():
-    return render_template("index.html", event=get_tasks())
+def home():
+    return render_template(
+        "index.html",
+        events=get_events(),
+        tasks=get_tasks()
+    )
 
 @app.route('/record', methods=['POST'])
 def add_record():
@@ -29,7 +29,7 @@ def add_record():
         "color": request.form.get('descripcio', 'purple'),
         "completada": False
         }
-        db.task.insert_one()
+        db.task.insert_one(task)
         return "Task saved successfully"
     elif (request.form['type']) == "event":
         event = {
@@ -39,7 +39,7 @@ def add_record():
         "endTime": request.form['titol'],
         "color": request.form.get('descripcio', 'blue')
         }
-        db.event.insert_one()
+        db.event.insert_one(event)
         return "Event saved successfully"
 
     return redirect(url_for('home'))
