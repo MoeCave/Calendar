@@ -64,6 +64,9 @@ Antes de comenzar, asegúrate de tener instalado:
 # Crear entorno virtual
 python -m venv venv
 
+# Activar entorno virtual
+venv\Scripts\activate
+
 # Crear archivos de requirements.txt
 pip freeze > requirements.txt
 
