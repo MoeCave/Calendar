@@ -1,2 +1,2 @@
 # Calendar
-Pagina web sobre un diccionario con HTML, CSS, JS, Python + MongoDB + Flask
+Pagina web sobre un diccionario con HTML, CSS, JS, Python + Flask y MongoDB
