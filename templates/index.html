@@ -1,32 +1,152 @@
 <!DOCTYPE html>
 <html lang="es">
+
     <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Calendario Minimalista</title>
 
-        <!-- Tailwind compilado -->
+        <!-- Tailwind CSS -->
+        <script src="https://cdn.tailwindcss.com"></script>
+
+        <!-- FullCalendar CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
+
+        <!-- CSS Propio-->
         <link rel="stylesheet" href="{{ url_for('static', filename='styles/styles.css') }}">
-
-        <title>Calendario</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='styles/custom.css') }}">
     </head>
 
-    <body>
-        <main>
-            <section class="calendar">
-                <div id="calendar"></div>
-            </section>
+    <body class="bg-gray-50 min-h-screen text-gray-900">
+        <div class="flex h-screen">
 
-            <section class="number">
+            <!-- Panel Izquierdo-->
+            <div class="w-1/2 bg-white border-r border-gray-200 flex flex-col p-12">
 
-            </section>
-        </main>
+                <!-- Número gigante del día -->
+                <div class="text-center mb-8">
+                    <div id="selected-day-number" class="text-[20rem] font-bold text-black leading-none mb-6"
+                        style="font-family: 'Playfair Display', 'Times New Roman', serif;">
+                        13
+                    </div>
+                    <div class="space-y-1">
+                        <div id="selected-day-name" class="text-sm font-semibold uppercase tracking-wider text-gray-900">
+                            FRIDAY
+                        </div>
+                        <div id="selected-full-date" class="text-sm text-gray-600">
+                            13 February 2026
+                        </div>
+                    </div>
+                </div>
 
-        <!-- FullCalendar bundle global -->
-        <script src="{{ url_for('static', filename='scripts/fullcalendar.global.min.js') }}"></script>
-        
-        <script type="text/plain" id="events-data">
-        window.calendarEvents = {{ events | tojson | safe }};
+                <!-- Sección de tareas del día seleccionado -->
+                <div class="flex-1 overflow-y-auto">
+                    <div class="max-w-md mx-auto">
+                        <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-900 mb-4">
+                            Tareas del día
+                        </h3>
+
+                        <!-- Formulario para agregar tarea -->
+                        <div class="space-y-3 mb-6 pb-6 border-b border-gray-200">
+                            <input type="text" id="task-title" placeholder="Nueva tarea..."
+                                class="w-full bg-transparent border-b border-gray-300 px-0 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-900 transition-colors"
+                                maxlength="100">
+                            <textarea id="task-description" placeholder="Descripción (opcional)"
+                            class="w-full bg-transparent border-b border-gray-300 px-0 py-1 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-900 transition-colors resize-none h-10"
+                            maxlength="300"></textarea>
+                            <div class="flex gap-3 items-center">
+                                <div class="flex items-center gap-2">
+                                    <input type="number" id="task-duration" min="1" max="90" value="1"
+                                        class="w-16 bg-transparent border-b border-gray-300 px-0 py-2 text-sm text-gray-900 focus:outline-none focus:border-gray-900 transition-colors">
+                                    <span class="text-xs text-gray-500">días</span>
+                                </div>
+
+                                <!-- Selector de color minimalista -->
+                                <div class="flex gap-2 ml-auto">
+                                <!-- Oscuro neutro -->
+                                <div class="color-option w-6 h-6 rounded-full bg-gray-900 cursor-pointer hover:ring-2 hover:ring-gray-400 transition-all"
+                                    data-color="#111827"></div>
+
+                                <!-- Azul intenso -->
+                                <div class="color-option w-6 h-6 rounded-full bg-blue-500 cursor-pointer hover:ring-2 hover:ring-gray-400 transition-all"
+                                    data-color="#3b82f6"></div>
+
+                                <!-- Verde -->
+                                <div class="color-option w-6 h-6 rounded-full bg-green-500 cursor-pointer hover:ring-2 hover:ring-gray-400 transition-all"
+                                    data-color="#22c55e"></div>
+
+                                <!-- Rojo -->
+                                <div class="color-option w-6 h-6 rounded-full bg-red-400 cursor-pointer hover:ring-2 hover:ring-gray-400 transition-all"
+                                    data-color="#f87171"></div>
+                                </div>
+                                <input type="hidden" id="task-color" value="#111827">
+                            </div>
+                            <button id="add-task-btn"
+                                class="w-full bg-gray-900 text-white py-2.5 text-xs font-semibold uppercase tracking-widest rounded-lg
+                                    hover:bg-gray-800 active:bg-black transition-colors duration-150">
+                                Agregar
+                            </button>
+                        </div>
+
+                        <!-- Lista de tareas del día seleccionado -->
+                        <div id="tasks-list" class="space-y-3">
+                            <!-- Las tareas se renderizan aquí dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Panel Derecho: Calendario FullCalendar -->
+            <div class="w-1/2 bg-white p-8 flex flex-col">
+
+                <!-- Encabezado del Calendario -->
+                <div class="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
+                    <div class="flex gap-2">
+                        <button id="prev-month"
+                            class="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded transition-colors">
+                            ←
+                        </button>
+                        <button id="today-btn"
+                            class="px-3 h-8 flex items-center justify-center text-xs font-semibold uppercase tracking-wider text-gray-600 hover:bg-gray-100 rounded transition-colors">
+                            Hoy
+                        </button>
+                        <button id="next-month"
+                            class="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded transition-colors">
+                            →
+                        </button>
+                    </div>
+                    <h2 id="calendar-month"
+                        class="text-xs font-semibold uppercase tracking-wider text-gray-900 cursor-pointer select-none">
+                    FEBRUARY 2026
+                    </h2>
+                </div>
+
+                <!-- Contenedor del Calendario FullCalendar -->
+                <div id="calendar" class="flex-1"></div>
+
+            </div>
+    </div>
+
+        <!-- Formulario oculto para enviar al servidor (mantenido para compatibilidad) -->
+        <form id="server-task-form" action="/record" method="post" class="hidden">
+            <input type="hidden" name="type" value="task">
+            <input type="hidden" name="titol">
+            <input type="hidden" name="descripcio">
+            <input type="hidden" name="limitDate">
+            <input type="hidden" name="color">
+        </form>
+
+        <!-- Inyectar tareas desde MongoDB -->
+        <script>
+            window.INIT_TASKS = {{ tasks|tojson|safe }};
+            console.log('📦 Tareas cargadas:', window.INIT_TASKS);
         </script>
-        <!-- Tu lógica -->
+        <!-- FullCalendar JS (CDN, o el tuyo local si quieres) -->
+        <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+
+        <!-- Tu JS -->
         <script src="{{ url_for('static', filename='scripts/calendar.js') }}"></script>
+
     </body>
 </html>

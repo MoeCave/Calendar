@@ -1,0 +1,160 @@
+/* ========================================
+   TASK CARDS - BASE STYLES
+   ======================================== */
+
+.task-card {
+  border-radius: 0.75rem;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid var(--color-gray-200);
+  background-color: #fff;
+  overflow: hidden;
+  transition: transform 0.15s ease;
+}
+
+.task-card:hover {
+  transform: translateY(-1px);
+}
+
+.task-card-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.task-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.task-card .flex-1 {
+  min-width: 0; /* Previene que el texto rompa el layout */
+}
+
+
+/* ========================================
+   TASK CONTENT - TITLE & DESCRIPTION
+   ======================================== */
+
+.task-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-gray-900);
+  white-space: normal;
+  word-break: break-word;
+}
+
+.task-description {
+  margin-top: 0.05rem;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--color-gray-600);
+  white-space: normal;
+  word-break: break-word;
+  
+  /* Truncado a 3 líneas */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-height: 4.1em;
+  
+  cursor: help;
+}
+
+
+/* ========================================
+   TASK METADATA - BADGE & COLOR DOT
+   ======================================== */
+
+.task-duration-badge {
+  display: inline-block;
+  margin-top: 0.2rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background-color: var(--color-gray-100);
+  color: var(--color-gray-600);
+}
+
+.task-color-dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 9999px;
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+}
+
+
+/* ========================================
+   TASK EDITING MODE
+   ======================================== */
+
+.task-card.editing {
+  padding: 0.6rem 0.75rem;
+  background-color: var(--color-white);
+}
+
+.edit-input {
+  width: 100%;
+  padding: 0 0 0.1rem 0;
+  margin-bottom: 0.35rem;
+  
+  font-size: 0.8rem;
+  line-height: 1.1;
+  color: var(--color-gray-900);
+  
+  border: 0;
+  border-bottom: 1px solid var(--color-gray-200);
+  background-color: transparent;
+  outline: none;
+  
+  transition: border-color 0.2s ease;
+}
+
+.edit-input:focus {
+  border-bottom-color: var(--color-gray-900);
+}
+
+.edit-textarea {
+  display: block;
+  min-height: 1.2rem;
+  max-height: 2.2rem;
+  padding-top: 0;
+  padding-bottom: 0.05rem;
+  resize: vertical;
+}
+
+
+/* ========================================
+   TASK LIST CONTAINER
+   ======================================== */
+
+#tasks-list {
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: 4px; /* Espacio para scrollbar */
+}
+
+
+/* ========================================
+   CALENDAR - PAST DAYS DISABLED
+   ======================================== */
+
+.fc-day-past-disabled {
+  position: relative;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.fc-day-past-disabled::after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.14);
+  pointer-events: none;
+}
