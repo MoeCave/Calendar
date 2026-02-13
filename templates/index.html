@@ -47,7 +47,7 @@
                         </h3>
 
                         <!-- Formulario para agregar tarea -->
-                        <div class="space-y-3 mb-6 pb-6 border-b border-gray-200">
+                        <form method="post" action="/record" class="space-y-3 mb-6 pb-6 border-b border-gray-200">
                             <input type="text" id="task-title" placeholder="Nueva tarea..."
                                 class="w-full bg-transparent border-b border-gray-300 px-0 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-900 transition-colors"
                                 maxlength="100">
@@ -86,7 +86,7 @@
                                     hover:bg-gray-800 active:bg-black transition-colors duration-150">
                                 Agregar
                             </button>
-                        </div>
+                        </form>
 
                         <!-- Lista de tareas del día seleccionado -->
                         <div id="tasks-list" class="space-y-3">
@@ -127,15 +127,6 @@
 
             </div>
     </div>
-
-        <!-- Formulario oculto para enviar al servidor (mantenido para compatibilidad) -->
-        <form id="server-task-form" action="/record" method="post" class="hidden">
-            <input type="hidden" name="type" value="task">
-            <input type="hidden" name="titol">
-            <input type="hidden" name="descripcio">
-            <input type="hidden" name="limitDate">
-            <input type="hidden" name="color">
-        </form>
 
         <!-- Inyectar tareas desde MongoDB -->
         <script>

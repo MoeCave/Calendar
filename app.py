@@ -38,45 +38,63 @@ def get_dades():
 
 @app.route('/record', methods=['POST'])
 def add_record():
-    if (request.form['type']) == "task":
+    form_type = request.form.get('type')
+
+    if form_type == "task":
         task = {
-        "titol": request.form['titol'],
-        "descripcio": request.form.get('descripcio', ''),
-        "limitDate": request.form.get('descripcio', ''),
-        "color": request.form.get('descripcio', 'purple'),
-        "completada": False
+            "titol": request.form.get('titol'),
+            "descripcio": request.form.get('descripcio', ''),
+            "limitDate": request.form.get('limitDate', ''),
+            "endDate": request.form.get('endDate', ''),      # ← NUEVO
+            "duration": int(request.form.get('duration', 1)), # ← NUEVO
+            "color": request.form.get('color', 'purple'),
+            "completada": False
         }
-        db.task.insert_one(task)
-        return "Task saved successfully"
-    elif (request.form['type']) == "event":
+
+        result = db.task.insert_one(task)
+        
+        return jsonify({"success": True, "id": str(result.inserted_id)})
+
+    elif form_type == "event":
         event = {
-        "title": request.form['titol'],
-        "description": request.form.get('descripcio', ''),
-        "starTime": request.form['titol'],
-        "endTime": request.form['titol'],
-        "color": request.form.get('descripcio', 'blue')
+            "title": request.form.get('titol'),
+            "description": request.form.get('descripcio', ''),
+            "startTime": request.form.get('startTime'),
+            "endTime": request.form.get('endTime'),
+            "color": request.form.get('color', 'blue')
         }
+
         db.event.insert_one(event)
-        return "Event saved successfully"
+        return jsonify({"success": True})
 
     return redirect(url_for('home'))
 
-@app.route('/task/<titol>/completar', methods=['POST'])
-def complete_task(titol):
-    db.task.update_one({"titol": titol}, {"$set": {"completada": True}})
-    return redirect(url_for('home'))
+@app.route('/task/<task_id>/editar', methods=['POST'])
+def edit_task(task_id):
+    update_data = {
+        "titol": request.form.get('titol'),
+        "descripcio": request.form.get('descripcio', '')
+    }
+    
+    # Si se proporciona endDate, actualizarlo también
+    if request.form.get('endDate'):
+        update_data['endDate'] = request.form.get('endDate')
+    
+    db.task.update_one(
+        {"_id": ObjectId(task_id)}, 
+        {"$set": update_data}
+    )
+    return '', 204
 
-@app.route('/task/<titol>/eliminar', methods=['POST'])
-def delete_task(titol):
-    db.task.delete_one({"titol": titol})
-    return redirect(url_for('home'))
+@app.route('/task/<task_id>/eliminar', methods=['POST'])
+def delete_task(task_id):
+    db.task.delete_one({"_id": ObjectId(task_id)})
+    return '', 204
 
 @app.route('/event/<titol>/eliminar', methods=['POST'])
 def delete_event(titol):
     db.event.delete_one({"titol": titol})
     return redirect(url_for('home'))
-
-
 
 if __name__ == '__main__':
     app.run(debug=True)

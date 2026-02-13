@@ -14,6 +14,7 @@ const dayNamesShort = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 const dayNamesFull = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 // Inicializar tareas desde MongoDB
+// Inicializar tareas desde MongoDB
 function initTasksFromServer() {
   if (!Array.isArray(window.INIT_TASKS)) return;
 
@@ -22,16 +23,36 @@ function initTasksFromServer() {
 
     const id = 'mongo_' + t._id;
 
-    let base = t.limitDate ? new Date(t.limitDate) : new Date();
-    if (isNaN(base.getTime())) base = new Date();
-    base.setHours(0,0,0,0);
+    // Usar las fechas guardadas o calcular desde limitDate + duration
+    let startDate, endDate;
+    
+    if (t.endDate) {
+      // Si tenemos endDate guardado, usarlo directamente
+      startDate = new Date(t.limitDate);
+      endDate = new Date(t.endDate);
+    } else {
+      // Fallback: calcular desde limitDate + duration
+      startDate = new Date(t.limitDate || new Date());
+      const duration = t.duration || 1;
+      endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + duration);
+    }
 
-    const start = formatDate(base);
-    const endDate = new Date(base);
-    endDate.setDate(endDate.getDate() + 1);
+    // Validar fechas
+    if (isNaN(startDate.getTime())) startDate = new Date();
+    if (isNaN(endDate.getTime())) {
+      endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + 1);
+    }
+
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(0, 0, 0, 0);
+
+    const start = formatDate(startDate);
     const end = formatDate(endDate);
 
     tasks[id] = {
+      mongoId: t._id,
       title: t.titol || '',
       description: t.descripcio || '',
       start,
@@ -172,38 +193,40 @@ function renderTasksList() {
             <button class="task-btn" onclick="cancelTaskEdit('${id}')">Cancelar</button>
           </div>
         `;
-        } else {
-          card.innerHTML = `
-            <div class="task-card-inner">
-              <div class="task-main">
-                <div>
-                  <div class="task-title">${task.title}</div>
-                  ${
-                    task.description
-                      ? `<div class="task-description" title="${task.description}">${task.description}</div>`
-                      : ''
-                  }
-                  ${
-                    durationDays > 1
-                      ? `<div class="task-duration-badge">${durationDays} días</div>`
-                      : ''
-                  }
-                </div>
-                <div class="task-color-dot" style="background-color: ${task.color};"></div>
+        // Reemplaza la sección del card.innerHTML cuando NO está editando:
+      } else {
+        card.innerHTML = `
+          <div class="task-card-inner">
+            <div class="task-main">
+              <div>
+                <div class="task-title">${task.title}</div>
+                ${
+                  task.description
+                    ? `<div class="task-description" title="${task.description}">${task.description}</div>`
+                    : ''
+                }
+                ${
+                  durationDays > 1
+                    ? `<div class="task-duration-badge">${durationDays} días</div>`
+                    : ''
+                }
               </div>
-              <div class="task-actions mt-2">
-                <button class="task-btn" onclick="editTask('${id}')">Editar</button>
-                <button class="task-btn delete" onclick="deleteTask('${id}')">Eliminar</button>
-              </div>
+              <div class="task-color-dot" style="background-color: ${task.color};"></div>
             </div>
-          `;
-        }
+            <div class="task-actions mt-2">
+              <button class="task-btn" onclick="editTask('${id}')">Editar</button>
+              <button class="task-btn delete" onclick="deleteTask('${id}')">Eliminar</button>
+            </div>
+          </div>
+        `;
+      }
 
 
     container.appendChild(card);
   });
 }
 
+// Agregar nueva tarea
 // Agregar nueva tarea
 function addTask() {
   const title = document.getElementById('task-title').value.trim();
@@ -212,7 +235,7 @@ function addTask() {
   const color = selectedColor;
 
   if (!title) {
-    return; // Silenciosamente no hacer nada si está vacío
+    return;
   }
 
   // Calcular fecha de fin
@@ -255,13 +278,22 @@ function addTask() {
   formData.append('titol', title);
   formData.append('descripcio', description);
   formData.append('limitDate', formatDate(startDate));
+  formData.append('endDate', formatDate(endDate));  // ← NUEVO: fecha de fin
+  formData.append('duration', duration);             // ← NUEVO: duración en días
   formData.append('color', color);
 
   fetch('/record', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
     body: formData.toString()
-  }).catch(err => console.error('Error guardando en backend:', err));
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success && data.id) {
+      tasks[id].mongoId = data.id;
+    }
+  })
+  .catch(err => console.error('Error guardando en backend:', err));
 
   // Limpiar formulario
   document.getElementById('task-title').value = '';
@@ -289,6 +321,7 @@ function editTask(id) {
 }
 
 // Guardar edición de tarea (solo Frontend, Mongo no se actualiza aún)
+// Guardar edición de tarea
 function saveTaskEdit(id) {
   const titleInput = document.getElementById(`edit-title-${id}`);
   const descInput  = document.getElementById(`edit-desc-${id}`);
@@ -298,8 +331,12 @@ function saveTaskEdit(id) {
   const newDesc  = descInput.value.trim();
 
   if (!newTitle) {
-    return; // no guardar si está vacío
+    return;
   }
+  
+  const mongoId = tasks[id].mongoId;
+  
+  // Actualizar en frontend
   tasks[id].title = newTitle;
   tasks[id].description = newDesc;
   tasks[id].editing = false;
@@ -309,6 +346,20 @@ function saveTaskEdit(id) {
   if (event) {
     event.setProp('title', newTitle);
     event.setExtendedProp('description', newDesc);
+  }
+
+  // Enviar al backend si tiene mongoId
+  if (mongoId) {
+    const formData = new URLSearchParams();
+    formData.append('titol', newTitle);
+    formData.append('descripcio', newDesc);
+    formData.append('endDate', tasks[id].end);  // ← NUEVO: mantener la fecha de fin
+
+    fetch(`/task/${mongoId}/editar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+      body: formData.toString()
+    }).catch(err => console.error('Error actualizando en backend:', err));
   }
 
   renderTasksList();
@@ -322,15 +373,33 @@ function cancelTaskEdit(id) {
 }
 // Eliminar tarea (solo Frontend, Mongo no se actualiza aún)
 function deleteTask(id) {
-  delete tasks[id];
-
-  const event = calendar.getEventById(id);
-  if (event) {
-    event.remove();
+  if (!tasks[id]) return;
+  
+  const mongoId = tasks[id].mongoId;
+  
+  if (!mongoId) {
+    console.error('No mongoId found for task:', id);
+    return;
   }
 
-  renderTasksList();
+  fetch(`/task/${mongoId}/eliminar`, {
+    method: 'POST'
+  })
+  .then(response => {
+    if (response.ok) {
+      delete tasks[id];
+      
+      const event = calendar.getEventById(id);
+      if (event) event.remove();
+      
+      renderTasksList();
+    } else {
+      console.error('Error al eliminar del servidor');
+    }
+  })
+  .catch(err => console.error("Error eliminando:", err));
 }
+
 
 // Selector de color
 function setupColorPicker() {
