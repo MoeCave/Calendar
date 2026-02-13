@@ -91,10 +91,26 @@ def delete_task(task_id):
     db.task.delete_one({"_id": ObjectId(task_id)})
     return '', 204
 
-@app.route('/event/<titol>/eliminar', methods=['POST'])
-def delete_event(titol):
-    db.event.delete_one({"titol": titol})
-    return redirect(url_for('home'))
+@app.route('/task/<task_id>/actualizar-fechas', methods=['POST'])
+def update_task_dates(task_id):
+    limit_date = request.form.get('limitDate')
+    end_date = request.form.get('endDate')
+    
+    # Calcular la duración en días
+    from datetime import datetime
+    start = datetime.strptime(limit_date, '%Y-%m-%d')
+    end = datetime.strptime(end_date, '%Y-%m-%d')
+    duration = (end - start).days
+    
+    db.task.update_one(
+        {"_id": ObjectId(task_id)}, 
+        {"$set": {
+            "limitDate": limit_date,
+            "endDate": end_date,
+            "duration": duration
+        }}
+    )
+    return '', 204
 
 if __name__ == '__main__':
     app.run(debug=True)

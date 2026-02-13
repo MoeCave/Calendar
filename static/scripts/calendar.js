@@ -210,6 +210,7 @@ function renderTasksList() {
                     ? `<div class="task-duration-badge">${durationDays} días</div>`
                     : ''
                 }
+                <input type="checkbox"/>
               </div>
               <div class="task-color-dot" style="background-color: ${task.color};"></div>
             </div>
@@ -456,44 +457,73 @@ function initCalendar() {
       }, 100);
     },
 
-    eventDrop: function(info) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+  eventDrop: function(info) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const newStart = new Date(info.event.start);
+    newStart.setHours(0, 0, 0, 0);
+
+    if (newStart < today) {
+      info.revert();  // vuelve al sitio original
+      return;
+    }
+    
+    const taskId = info.event.id;
+    if (tasks[taskId]) {
+      const oldStart = new Date(tasks[taskId].start);
+      const oldEnd = new Date(tasks[taskId].end);
+      const duration = oldEnd - oldStart;
 
       const newStart = new Date(info.event.start);
-      newStart.setHours(0, 0, 0, 0);
+      const newEnd = new Date(newStart.getTime() + duration);
 
-      if (newStart < today) {
-        info.revert();  // vuelve al sitio original
-        return;
+      tasks[taskId].start = formatDate(newStart);
+      tasks[taskId].end = formatDate(newEnd);
+
+      info.event.setEnd(newEnd);
+
+      // ← NUEVO: Actualizar en el backend
+      const mongoId = tasks[taskId].mongoId;
+      if (mongoId) {
+        const formData = new URLSearchParams();
+        formData.append('limitDate', formatDate(newStart));
+        formData.append('endDate', formatDate(newEnd));
+
+        fetch(`/task/${mongoId}/actualizar-fechas`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+          body: formData.toString()
+        }).catch(err => console.error('Error actualizando fechas en backend:', err));
       }
-      const taskId = info.event.id;
-      if (tasks[taskId]) {
-        const oldStart = new Date(tasks[taskId].start);
-        const oldEnd = new Date(tasks[taskId].end);
-        const duration = oldEnd - oldStart;
 
-        const newStart = new Date(info.event.start);
-        const newEnd = new Date(newStart.getTime() + duration);
+      renderTasksList();
+    }
+  },
 
-        tasks[taskId].start = formatDate(newStart);
-        tasks[taskId].end = formatDate(newEnd);
+  eventResize: function(info) {
+  const taskId = info.event.id;
+  if (tasks[taskId]) {
+    tasks[taskId].start = formatDate(info.event.start);
+    tasks[taskId].end = formatDate(info.event.end);
 
-        info.event.setEnd(newEnd);
+    // ← NUEVO: Actualizar en el backend
+    const mongoId = tasks[taskId].mongoId;
+    if (mongoId) {
+      const formData = new URLSearchParams();
+      formData.append('limitDate', formatDate(info.event.start));
+      formData.append('endDate', formatDate(info.event.end));
 
-        renderTasksList();
-      }
-    },
+      fetch(`/task/${mongoId}/actualizar-fechas`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+        body: formData.toString()
+      }).catch(err => console.error('Error actualizando fechas en backend:', err));
+    }
 
-    eventResize: function(info) {
-      const taskId = info.event.id;
-      if (tasks[taskId]) {
-        tasks[taskId].start = formatDate(info.event.start);
-        tasks[taskId].end = formatDate(info.event.end);
-
-        renderTasksList();
-      }
-    },
+    renderTasksList();
+  }
+},
 
     dayCellClassNames: function(arg) {
       const classes = [];
