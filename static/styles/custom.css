@@ -1,12 +1,7 @@
 
 /* ========================================
-   SHOW THE DAY
+   CALENDAR
    ======================================== */
-
-#form-events{
-  position: relative;
-  overflow-y: visible;
-}
 
 #calendar {
   position: relative;
@@ -41,6 +36,15 @@
 .fc-daygrid-day.selected-day .fc-daygrid-day-frame {
   border: 2px solid #111827;
   background-color: rgba(17, 24, 39, 0.04);
+}
+
+/* ========================================
+   LEFT ASIDE
+   ======================================== */
+
+#form-events{
+  position: relative;
+  overflow-y: visible;
 }
 
 /* ========================================

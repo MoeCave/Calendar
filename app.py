@@ -1,74 +1,56 @@
 from flask import Flask, request, render_template, redirect, url_for, jsonify
-from connectBD import *
-from bson import ObjectId
+from connectBD import * # Connected to the MongoDB database
+from bson import ObjectId # To convert ObjectId to a string and vice versa
 from datetime import datetime
 
+# Functioned to serialize MongoDB documents
 def serialize_doc(doc):
-    doc["_id"] = str(doc["_id"])  # ObjectId → stringa
+    doc["_id"] = str(doc["_id"])
     return doc
 
 app = Flask(__name__)
 
-db = connectBD()
+db = connectBD() # Connect to DataBase
 
-def get_events():
-    return list(db.event.find())
-
+#Functions to get lists of documents from MongoDB
 def get_tasks():
     return list(db.task.find())
 
+# MAIN ROUTE: Show the main page with events and tasques
 @app.route('/')
 def home():
-    events = [serialize_doc(e) for e in get_events()]
-    tasks = [serialize_doc(t) for t in get_tasks()]
+    tasks = [serialize_doc(t) for t in get_tasks()] # Serialize ObjectId to string
 
     return render_template(
         "index.html",
-        events=events,
         tasks=tasks
     )
 
+# API to obtain data from a generic collection
 @app.route('/api/dades')
 def get_dades():
     dades = list(db.colleccio.find())
-    # Convertir ObjectId a string
+    # Convert ObjectId to string but to JSON
     for item in dades:
         item['_id'] = str(item['_id'])
     return jsonify(dades)
 
+# Route to register a record
 @app.route('/record', methods=['POST'])
 def add_record():
-    form_type = request.form.get('type')
 
-    if form_type == "task":
-        task = {
-            "titol": request.form.get('titol'),
-            "descripcio": request.form.get('descripcio', ''),
-            "limitDate": request.form.get('limitDate', ''),
-            "endDate": request.form.get('endDate', ''),      # ← NUEVO
-            "duration": int(request.form.get('duration', 1)), # ← NUEVO
-            "color": request.form.get('color', 'purple'),
-            "completada": False
-        }
-
-        result = db.task.insert_one(task)
-        
-        return jsonify({"success": True, "id": str(result.inserted_id)})
-
-    elif form_type == "event":
-        event = {
-            "title": request.form.get('titol'),
-            "description": request.form.get('descripcio', ''),
-            "startTime": request.form.get('startTime'),
-            "endTime": request.form.get('endTime'),
-            "color": request.form.get('color', 'blue')
-        }
-
-        db.event.insert_one(event)
-        return jsonify({"success": True})
+    task = {
+        "titol": request.form.get('titol'),
+        "descripcio": request.form.get('descripcio', ''),
+        "limitDate": request.form.get('limitDate', ''),
+        "duration": int(request.form.get('duration', 1)), # ← NUEVO
+        "color": request.form.get('color', 'purple'),
+        "completada": False
+    }
 
     return redirect(url_for('home'))
 
+# Route to edit an existing tavern
 @app.route('/task/<task_id>/editar', methods=['POST'])
 def edit_task(task_id):
     update_data = {
@@ -76,32 +58,36 @@ def edit_task(task_id):
         "descripcio": request.form.get('descripcio', '')
     }
     
-    # Si se proporciona endDate, actualizarlo también
+    # If endDate is provided, update it as well
     if request.form.get('endDate'):
         update_data['endDate'] = request.form.get('endDate')
     
     db.task.update_one(
-        {"_id": ObjectId(task_id)}, 
-        {"$set": update_data}
+        {"_id": ObjectId(task_id)}, # Search document by _id
+        {"$set": update_data} # Update provided camps
     )
     return '', 204
 
+# Route to eliminate en event
 @app.route('/task/<task_id>/eliminar', methods=['POST'])
 def delete_task(task_id):
     db.task.delete_one({"_id": ObjectId(task_id)})
     return '', 204
 
+# Route to update the dates of a restaurant and calculate the duration
 @app.route('/task/<task_id>/actualizar-fechas', methods=['POST'])
 def update_task_dates(task_id):
     limit_date = request.form.get('limitDate')
     end_date = request.form.get('endDate')
     
-    # Calcular la duración en días
-    from datetime import datetime
+    # Convert strings to datetime objects
     start = datetime.strptime(limit_date, '%Y-%m-%d')
     end = datetime.strptime(end_date, '%Y-%m-%d')
-    duration = (end - start).days
+
+    # Calculate the duration in days 
+    duration = (end - start).days 
     
+    # Update document with new dates and duration
     db.task.update_one(
         {"_id": ObjectId(task_id)}, 
         {"$set": {
@@ -112,5 +98,6 @@ def update_task_dates(task_id):
     )
     return '', 204
 
+# Start the Flask application
 if __name__ == '__main__':
     app.run(debug=True)
