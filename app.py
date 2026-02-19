@@ -38,15 +38,20 @@ def get_dades():
 # Route to register a record
 @app.route('/record', methods=['POST'])
 def add_record():
-
-    task = {
-        "titol": request.form.get('titol'),
-        "descripcio": request.form.get('descripcio', ''),
-        "limitDate": request.form.get('limitDate', ''),
-        "duration": int(request.form.get('duration', 1)), # ← NUEVO
-        "color": request.form.get('color', 'purple'),
-        "completada": False
-    }
+    form_type = request.form.get('type')
+    
+    if form_type == "task":
+        task = {
+            "titol": request.form.get('titol'),
+            "descripcio": request.form.get('descripcio', ''),
+            "limitDate": request.form.get('limitDate', ''),
+            "endDate": request.form.get('endDate', ''),
+            "duration": int(request.form.get('duration', 1)),
+            "color": request.form.get('color', 'purple'),
+            "completada": False
+        }
+        result = db.task.insert_one(task)
+        return jsonify({"success": True, "id": str(result.inserted_id)})
 
     return redirect(url_for('home'))
 
