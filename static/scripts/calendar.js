@@ -2,7 +2,7 @@
 let calendar;
 let selectedDate = new Date();
 let tasks = {}; // { eventId: { title, description, start, end, color } }
-let selectedColor = '#111827';
+let selectedColor = '#9B9B9B';
 
 // Nombres de meses y días en inglés (estilo minimalista como la imagen)
 const monthNames = [
@@ -164,7 +164,7 @@ function renderTasksList() {
     container.innerHTML = `
       <div class="empty-state">
         <div class="empty-state-icon">—</div>
-        <div class="empty-state-text">No hay tareas</div>
+        <div class="empty-state-text">There are no events</div>
       </div>
     `;
     return;
@@ -189,8 +189,8 @@ function renderTasksList() {
           <input type="text" class="edit-input" id="edit-title-${id}" value="${task.title}" maxlength="100">
           <textarea class="edit-input edit-textarea" id="edit-desc-${id}" maxlength="300">${task.description || ''}</textarea>
           <div class="task-actions">
-            <button class="task-btn save" onclick="saveTaskEdit('${id}')">Guardar</button>
-            <button class="task-btn" onclick="cancelTaskEdit('${id}')">Cancelar</button>
+            <button class="task-btn save" onclick="saveTaskEdit('${id}')">Save</button>
+            <button class="task-btn" onclick="cancelTaskEdit('${id}')">Cancel</button>
           </div>
         `;
         // Reemplaza la sección del card.innerHTML cuando NO está editando:
@@ -207,16 +207,15 @@ function renderTasksList() {
                 }
                 ${
                   durationDays > 1
-                    ? `<div class="task-duration-badge">${durationDays} días</div>`
+                    ? `<div class="task-duration-badge">${durationDays} days</div>`
                     : ''
                 }
-                <input type="checkbox"/>
               </div>
               <div class="task-color-dot" style="background-color: ${task.color};"></div>
             </div>
             <div class="task-actions mt-2">
-              <button class="task-btn" onclick="editTask('${id}')">Editar</button>
-              <button class="task-btn delete" onclick="deleteTask('${id}')">Eliminar</button>
+              <button class="task-btn" onclick="editTask('${id}')">Edit</button>
+              <button class="task-btn delete" onclick="deleteTask('${id}')">Delete</button>
             </div>
           </div>
         `;
@@ -428,12 +427,16 @@ function initCalendar() {
     initialView: 'dayGridMonth',
     locale: 'es',
     firstDay: 1,
-    height: '100%',
     headerToolbar: false,
 
     editable: true,
     droppable: true,
     eventResizableFromStart: true,
+    height: '70%',
+    expandRows: true,
+    contentHeight: 'auto',
+    expandRows: true,
+    dayMaxEvents: 1,
 
     events: getCalendarEvents(),
 

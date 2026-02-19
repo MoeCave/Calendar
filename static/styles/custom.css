@@ -1,3 +1,48 @@
+
+/* ========================================
+   SHOW THE DAY
+   ======================================== */
+
+#form-events{
+  position: relative;
+  overflow-y: visible;
+}
+
+#calendar {
+  position: relative;
+  width: 65%;
+  height: 70%;
+  margin: 0 auto;
+}
+
+.fc-daygrid-day-frame {
+  min-height: 60px !important;
+  max-height: 60px !important;
+}
+
+.fc-daygrid-more-link {
+  position: absolute;
+  bottom: 2px;
+  font-size: 0.7rem;
+}
+
+.empty-state{
+  margin-top: 50px;
+  text-align: center;
+}
+
+.wrap-calendarList{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 20px;
+}
+
+.fc-daygrid-day.selected-day .fc-daygrid-day-frame {
+  border: 2px solid #111827;
+  background-color: rgba(17, 24, 39, 0.04);
+}
+
 /* ========================================
    TASK CARDS - BASE STYLES
    ======================================== */
@@ -32,7 +77,6 @@
   min-width: 0; /* Previene que el texto rompa el layout */
 }
 
-
 /* ========================================
    TASK CONTENT - TITLE & DESCRIPTION
    ======================================== */
@@ -63,7 +107,6 @@
   cursor: help;
 }
 
-
 /* ========================================
    TASK METADATA - BADGE & COLOR DOT
    ======================================== */
@@ -87,7 +130,6 @@
   margin-top: 0.2rem;
   flex-shrink: 0;
 }
-
 
 /* ========================================
    TASK EDITING MODE
@@ -128,15 +170,15 @@
   resize: vertical;
 }
 
-
 /* ========================================
    TASK LIST CONTAINER
    ======================================== */
 
 #tasks-list {
-  max-height: 60vh;
+  position: relative;
+  height: 25vh;
   overflow-y: auto;
-  padding-right: 4px; /* Espacio para scrollbar */
+  padding-right: 4px;
 }
 
 
