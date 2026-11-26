@@ -6,7 +6,25 @@
 let calendar;
 let selectedDate = new Date();
 let tasks = {}; // { eventId: { title, description, start, end, color } }
-let selectedColor = '#9B9B9B';
+let selectedColor = '#111827';
+
+function parseLocalDate(dateStr) {
+  if (!dateStr) return new Date();
+  const match = String(dateStr).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  }
+  return new Date(dateStr);
+}
+
+function escapeHtml(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 /* **************************************** */
 // Months and days in English  ///////////////
@@ -37,10 +55,10 @@ function initTasksFromServer() {
     
 
     if (t.endDate) {
-      startDate = new Date(t.limitDate); // startDate is created from t.limitDate
-      endDate = new Date(t.endDate);
+      startDate = parseLocalDate(t.limitDate); // startDate is created from t.limitDate
+      endDate = parseLocalDate(t.endDate);
     } else {
-      startDate = new Date(t.limitDate || new Date());
+      startDate = t.limitDate ? parseLocalDate(t.limitDate) : new Date();
       const duration = t.duration || 1;
       endDate = new Date(startDate);
       endDate.setDate(endDate.getDate() + duration);
@@ -112,7 +130,7 @@ function getCalendarEvents() {
     end: tasks[id].end,
     backgroundColor: tasks[id].color,
     borderColor: tasks[id].color,
-    textColor: '#111827',
+    textColor: '#ffffff',
     extendedProps: {
       description: tasks[id].description
     }
@@ -204,11 +222,7 @@ function renderTasksList() {
   // Filter tasks that include the selected day
   const dayTasks = Object.keys(tasks).filter(id => {
     const task = tasks[id];
-    const taskStart = new Date(task.start);
-    const taskEnd = new Date(task.end);
-    const selected = new Date(selectedDateStr);
-
-    return selected >= taskStart && selected < taskEnd;
+    return selectedDateStr >= task.start && selectedDateStr < task.end;
   });
 
   // If there is no event, it indicates it
@@ -232,20 +246,22 @@ function renderTasksList() {
     card.id = `task-${id}`;
 
     // Calcular duración en días
-    const start = new Date(task.start);
-    const end = new Date(task.end);
+    const start = parseLocalDate(task.start);
+    const end = parseLocalDate(task.end);
     const durationDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+    const safeTitle = escapeHtml(task.title);
+    const safeDesc = escapeHtml(task.description || '');
 
       // Checks if the task's editing property is true
       if (task.editing) {
         // If the task's editing property is true, display it in editing mode
         card.classList.add('editing');
         card.innerHTML = `
-          <input type="text" class="edit-input" id="edit-title-${id}" value="${task.title}" maxlength="100">
-          <textarea class="edit-input edit-textarea" id="edit-desc-${id}" maxlength="300">${task.description || ''}</textarea>
+          <input type="text" class="edit-input" id="edit-title-${id}" value="${safeTitle}" maxlength="100">
+          <textarea class="edit-input edit-textarea" id="edit-desc-${id}" maxlength="300">${safeDesc}</textarea>
           <div class="task-actions">
-            <button class="task-btn save" onclick="saveTaskEdit('${id}')">Save</button>
-            <button class="task-btn" onclick="cancelTaskEdit('${id}')">Cancel</button>
+            <button type="button" class="task-btn save" onclick="saveTaskEdit('${id}')">Save</button>
+            <button type="button" class="task-btn" onclick="cancelTaskEdit('${id}')">Cancel</button>
           </div>
         `;
       // If not, display the events
@@ -253,11 +269,11 @@ function renderTasksList() {
         card.innerHTML = `
           <div class="task-card-inner">
             <div class="task-main">
-              <div>
-                <div class="task-title">${task.title}</div>
+              <div class="flex-1">
+                <div class="task-title">${safeTitle}</div>
                 ${
                   task.description
-                    ? `<div class="task-description" title="${task.description}">${task.description}</div>`
+                    ? `<div class="task-description" title="${safeDesc}">${safeDesc}</div>`
                     : ''
                 }
                 ${
@@ -268,9 +284,9 @@ function renderTasksList() {
               </div>
               <div class="task-color-dot" style="background-color: ${task.color};"></div>
             </div>
-            <div class="task-actions mt-2">
-              <button class="task-btn" onclick="editTask('${id}')">Edit</button>
-              <button class="task-btn delete" onclick="deleteTask('${id}')">Delete</button>
+            <div class="task-actions">
+              <button type="button" class="task-btn" onclick="editTask('${id}')">Edit</button>
+              <button type="button" class="task-btn delete" onclick="deleteTask('${id}')">Delete</button>
             </div>
           </div>
         `;
@@ -324,7 +340,7 @@ function addTask() {
     end: formatDate(endDate),
     backgroundColor: color,
     borderColor: color,
-    textColor: '#111827',
+    textColor: '#ffffff',
     extendedProps: {
       description: description
     }
@@ -448,7 +464,10 @@ function deleteTask(id) {
   const mongoId = tasks[id].mongoId;
   
   if (!mongoId) {
-    console.error('No mongoId found for task:', id);
+    delete tasks[id];
+    const event = calendar.getEventById(id);
+    if (event) event.remove();
+    renderTasksList();
     return;
   }
 
@@ -502,13 +521,11 @@ function initCalendar() {
     initialView: 'dayGridMonth',   // Month in grid
     locale: 'en',
     firstDay: 1,                   // Week starts on Monday
-    height: '70%',
+    height: 'auto',
     headerToolbar: false,          // Don't show any upper toolbar
     editable: true,
     droppable: true,
     eventResizableFromStart: true, // Allow resizing from the start of the event
-    expandRows: true,
-    contentHeight: 'auto',
     expandRows: true,
     dayMaxEvents: 1,               // Maximum 1 visible event per cell
 
@@ -716,6 +733,14 @@ function setupNavigation() {
 /* **************************************** */
 
 function setupAddTaskButton() {
+  const form = document.getElementById('task-form');
+  if (form) {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      addTask();
+    });
+  }
+
   document.getElementById('add-task-btn').addEventListener('click', addTask);
 
   document.getElementById('task-title').addEventListener('keypress', (e) => {

@@ -21,8 +21,8 @@
   },
   "homepage": "https://github.com/BlowingFever/Calendar#readme",
   "devDependencies": {
-    "@tailwindcss/cli": "^4.1.18",
-    "tailwindcss": "^4.1.18"
+    "@tailwindcss/cli": "^4.3.0",
+    "tailwindcss": "^4.3.0"
   },
   "dependencies": {
     "detect-libc": "^2.1.2",
